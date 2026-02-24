@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teorema de Pitágoras</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: #13131c;
+    --border: #2a2a3e;
+    --accent-a: #ff6b6b;
+    --accent-b: #4ecdc4;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --hyp: #a855f7;
+    --gap: clamp(12px, 3vw, 24px);
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(12px, 4vw, 32px);
+    overflow-x: hidden;
+  }
+
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .wrapper {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 1100px;
+  }
+
+  /* HEADER */
+  header {
+    text-align: center;
+    margin-bottom: clamp(20px, 4vw, 40px);
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.7rem, 6vw, 3.6rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent-a), var(--hyp), var(--accent-b));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: clamp(0.55rem, 1.8vw, 0.8rem);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .formula-banner {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: clamp(8px, 2vw, 14px) clamp(14px, 4vw, 28px);
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(5px, 2vw, 12px);
+    margin-top: clamp(10px, 2vw, 18px);
+    font-size: clamp(1rem, 3.5vw, 1.5rem);
+    font-family: 'Playfair Display', serif;
+  }
+  .formula-banner span.fa { color: var(--accent-a); }
+  .formula-banner span.fb { color: var(--accent-b); }
+  .formula-banner span.fc { color: var(--hyp); }
+  .formula-banner span.op { color: var(--muted); }
+
+  /* MAIN GRID */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: var(--gap);
+    align-items: start;
+  }
+
+  @media (max-width: 680px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  /* CANVAS PANEL */
+  .canvas-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: clamp(12px, 3vw, 22px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .canvas-wrap { width: 100%; }
+
+  canvas {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 8px;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .toggle-btn {
+    flex: 1 1 auto;
+    min-width: 100px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(0.58rem, 1.7vw, 0.74rem);
+    padding: 9px 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    transition: background 0.2s, border 0.2s, color 0.2s;
+  }
+  .toggle-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+  .toggle-btn.active { background: rgba(168,85,247,0.2); border-color: var(--hyp); color: var(--hyp); }
+
+  /* CONTROLS */
+  .controls-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: clamp(14px, 3vw, 22px);
+  }
+
+  .card-title {
+    font-size: clamp(0.55rem, 1.6vw, 0.65rem);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: clamp(12px, 2.5vw, 18px);
+  }
+
+  .slider-group { margin-bottom: clamp(12px, 2vw, 18px); }
+  .slider-group:last-of-type { margin-bottom: 0; }
+
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: clamp(0.74rem, 2vw, 0.87rem);
+  }
+  .slider-label .name.a { color: var(--accent-a); font-weight: 700; }
+  .slider-label .name.b { color: var(--accent-b); font-weight: 700; }
+  .slider-label .val {
+    background: rgba(255,255,255,0.06);
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: clamp(0.68rem, 1.8vw, 0.8rem);
+  }
+
+  input[type=range] {
+    width: 100%;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range].a-sl { background: linear-gradient(to right, var(--accent-a), rgba(255,107,107,0.15)); }
+  input[type=range].b-sl { background: linear-gradient(to right, var(--accent-b), rgba(78,205,196,0.15)); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 2px solid rgba(255,255,255,0.25);
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+  .result-box {
+    background: rgba(168,85,247,0.1);
+    border: 1px solid rgba(168,85,247,0.35);
+    border-radius: 10px;
+    padding: clamp(12px, 2.5vw, 16px);
+    text-align: center;
+    margin-top: clamp(12px, 2.5vw, 16px);
+  }
+  .result-label {
+    font-size: clamp(0.55rem, 1.5vw, 0.65rem);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .result-value {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-weight: 900;
+    color: var(--hyp);
+    line-height: 1.1;
+  }
+  .result-formula {
+    font-size: clamp(0.6rem, 1.7vw, 0.74rem);
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* PROOF */
+  .proof-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-top: clamp(10px, 2vw, 14px);
+  }
+  .proof-cell {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: clamp(8px, 2vw, 12px) 6px;
+    text-align: center;
+  }
+  .proof-cell .pc-label {
+    font-size: clamp(0.5rem, 1.4vw, 0.6rem);
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .proof-cell .pc-val {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1rem, 3vw, 1.3rem);
+    font-weight: 700;
+    margin-top: 3px;
+  }
+  .proof-cell.ca .pc-val { color: var(--accent-a); }
+  .proof-cell.cb .pc-val { color: var(--accent-b); }
+  .proof-cell.cc .pc-val { color: var(--hyp); }
+
+  .eq-check {
+    text-align: center;
+    margin-top: 10px;
+    font-size: clamp(0.58rem, 1.7vw, 0.76rem);
+    padding: 9px;
+    border-radius: 8px;
+  }
+  .eq-check.valid {
+    background: rgba(78,205,196,0.13);
+    color: var(--accent-b);
+    border: 1px solid rgba(78,205,196,0.28);
+  }
+
+  .explanation {
+    font-size: clamp(0.67rem, 1.9vw, 0.77rem);
+    line-height: 1.75;
+    color: #a0a0b8;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="wrapper">
+
+  <header>
+    <h1>Teorema de Pitágoras</h1>
+    <p class="subtitle">Visualización Interactiva · Geometría Euclidiana</p>
+      <p class="subtitle">Gabriela Muñoz Vargas - 10-3</p>
+       <p class="subtitle">Trigonometria</p>
+    <div class="formula-banner">
+      <span class="fa">a²</span><span class="op">+</span>
+      <span class="fb">b²</span><span class="op">=</span>
+      <span class="fc">c²</span>
+    </div>
+  </header>
+
+  <div class="main-grid">
+
+    <div class="canvas-panel">
+      <div class="canvas-wrap">
+        <canvas id="cvs" width="620" height="480"></canvas>
+      </div>
+      <div class="btn-row">
+        <button class="toggle-btn active" id="btnSquares" onclick="toggleFeature('squares')">▪ Cuadrados</button>
+        <button class="toggle-btn active" id="btnLabels"  onclick="toggleFeature('labels')">◈ Etiquetas</button>
+        <button class="toggle-btn"        id="btnAnim"    onclick="toggleAnimate()">▶ Animar</button>
+      </div>
+    </div>
+
+    <div class="controls-panel">
+
+      <div class="card">
+        <div class="card-title">Ajustar catetos</div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span class="name a">Cateto a</span>
+            <span class="val" id="valA">80</span>
+          </div>
+          <input type="range" class="a-sl" id="slA" min="30" max="200" value="80" oninput="update()">
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">
+            <span class="name b">Cateto b</span>
+            <span class="val" id="valB">60</span>
+          </div>
+          <input type="range" class="b-sl" id="slB" min="30" max="200" value="60" oninput="update()">
+        </div>
+        <div class="result-box">
+          <div class="result-label">Hipotenusa c</div>
+          <div class="result-value" id="resC">100.00</div>
+          <div class="result-formula" id="resFml">√(80² + 60²)</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Comprobación a² + b² = c²</div>
+        <div class="proof-grid">
+          <div class="proof-cell ca"><div class="pc-label">a²</div><div class="pc-val" id="pA">6400</div></div>
+          <div class="proof-cell cb"><div class="pc-label">b²</div><div class="pc-val" id="pB">3600</div></div>
+          <div class="proof-cell cc"><div class="pc-label">c²</div><div class="pc-val" id="pC">10000</div></div>
+        </div>
+        <div class="eq-check valid" id="eqChk">✓ 6400 + 3600 = 10000</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">¿Qué dice el teorema?</div>
+        <p class="explanation">
+          En un <strong style="color:var(--text)">triángulo rectángulo</strong>, el cuadrado
+          de la hipotenusa (<span style="color:var(--hyp)">c</span>) es igual a la suma de los
+          cuadrados de los catetos (<span style="color:var(--accent-a)">a</span> y
+          <span style="color:var(--accent-b)">b</span>).<br><br>
+          Los cuadrados de colores sobre cada lado representan áreas. El área del cuadrado
+          violeta siempre iguala la suma de los cuadrados rojo y verde.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const cvs = document.getElementById('cvs');
+const ctx  = cvs.getContext('2d');
+
+// internal resolution
+const CW = 620, CH = 480;
+
+let showSquares = true, showLabels = true;
+let animating = false, animAngle = 0, animRaf;
+
+function toggleFeature(f) {
+  if (f === 'squares') {
+    showSquares = !showSquares;
+    document.getElementById('btnSquares').classList.toggle('active', showSquares);
+  } else {
+    showLabels = !showLabels;
+    document.getElementById('btnLabels').classList.toggle('active', showLabels);
+  }
+  draw();
+}
+
+function toggleAnimate() {
+  animating = !animating;
+  const btn = document.getElementById('btnAnim');
+  btn.classList.toggle('active', animating);
+  btn.textContent = animating ? '⏹ Detener' : '▶ Animar';
+  if (animating) loop(); else cancelAnimationFrame(animRaf);
+}
+
+function loop() {
+  animAngle += 0.015;
+  document.getElementById('slA').value = 60 + Math.sin(animAngle) * 80;
+  document.getElementById('slB').value = 60 + Math.cos(animAngle * 0.7) * 80;
+  update();
+  animRaf = requestAnimationFrame(loop);
+}
+
+/* draw square outward from segment P→P+d, perpendicular outward = (-dy, dx) */
+function drawSq(x0, y0, dx, dy, fill, stroke) {
+  const nx = -dy, ny = dx;
+  ctx.beginPath();
+  ctx.moveTo(x0,         y0        );
+  ctx.lineTo(x0+dx,      y0+dy     );
+  ctx.lineTo(x0+dx+nx,   y0+dy+ny  );
+  ctx.lineTo(x0+nx,      y0+ny     );
+  ctx.closePath();
+  ctx.fillStyle   = fill;   ctx.fill();
+  ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke();
+}
+
+function draw() {
+  const a = +document.getElementById('slA').value;
+  const b = +document.getElementById('slB').value;
+  const c = Math.hypot(a, b);
+
+  ctx.clearRect(0, 0, CW, CH);
+
+  /* fit triangle in canvas */
+  const margin = 60;
+  const fit = Math.min((CW - margin) / (b + c * 0.65),
+                       (CH - margin) / (a + c * 0.65));
+  const sa = a * fit, sb = b * fit, sc = c * fit;
+
+  /* right-angle vertex P, then Q (along +x) and R (along -y) */
+  const px = CW / 2 - sb / 2;
+  const py = CH / 2 + sa / 2 + 8;
+  const P  = { x: px,      y: py      };
+  const Q  = { x: px + sb, y: py      };
+  const R  = { x: px,      y: py - sa };
+
+  /* squares */
+  if (showSquares) {
+    drawSq(P.x, P.y, 0, -sa, 'rgba(255,107,107,0.18)', 'rgba(255,107,107,0.8)');
+    drawSq(P.x, P.y, sb,  0, 'rgba(78,205,196,0.18)',  'rgba(78,205,196,0.8)' );
+
+    /* hypotenuse square — perp direction = left of R→Q */
+    const ux = (Q.x - R.x) / c, uy = (Q.y - R.y) / c; // unit along hyp
+    const nx = -uy * sc, ny = ux * sc;                  // perp × length
+    ctx.beginPath();
+    ctx.moveTo(R.x, R.y);
+    ctx.lineTo(Q.x, Q.y);
+    ctx.lineTo(Q.x + nx, Q.y + ny);
+    ctx.lineTo(R.x + nx, R.y + ny);
+    ctx.closePath();
+    ctx.fillStyle   = 'rgba(168,85,247,0.18)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(168,85,247,0.85)'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  /* triangle */
+  ctx.beginPath();
+  ctx.moveTo(P.x, P.y); ctx.lineTo(Q.x, Q.y); ctx.lineTo(R.x, R.y);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fill();
+
+  /* sides */
+  [ [P,R,'#ff6b6b'], [P,Q,'#4ecdc4'], [R,Q,'#a855f7'] ].forEach(([f,t,col]) => {
+    ctx.beginPath(); ctx.moveTo(f.x,f.y); ctx.lineTo(t.x,t.y);
+    ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.stroke();
+  });
+
+  /* right-angle mark */
+  const sq = Math.max(9, Math.min(16, 14 * fit));
+  ctx.beginPath();
+  ctx.moveTo(P.x+sq, P.y);
+  ctx.lineTo(P.x+sq, P.y-sq);
+  ctx.lineTo(P.x,    P.y-sq);
+  ctx.strokeStyle = 'rgba(255,255,255,0.38)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  /* labels */
+  if (showLabels) {
+    const fs = Math.max(11, Math.min(17, 14 * fit));
+    ctx.font = `bold ${fs}px "Space Mono"`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const pad = fs * 1.6;
+
+    ctx.fillStyle = '#ff6b6b';
+    ctx.fillText(`a=${a}`, P.x - pad, (P.y + R.y) / 2);
+
+    ctx.fillStyle = '#4ecdc4';
+    ctx.fillText(`b=${b}`, (P.x + Q.x) / 2, P.y + pad);
+
+    ctx.fillStyle = '#a855f7';
+    const mx = (R.x + Q.x) / 2, my = (R.y + Q.y) / 2;
+    const ang = Math.atan2(Q.y - R.y, Q.x - R.x);
+    ctx.save();
+    ctx.translate(mx, my); ctx.rotate(ang);
+    ctx.fillText(`c=${c.toFixed(1)}`, 0, -pad * 0.85);
+    ctx.restore();
+  }
+}
+
+function update() {
+  const a = +document.getElementById('slA').value;
+  const b = +document.getElementById('slB').value;
+  const c = Math.hypot(a, b);
+  const a2 = a*a, b2 = b*b;
+
+  document.getElementById('valA').textContent = a;
+  document.getElementById('valB').textContent = b;
+  document.getElementById('resC').textContent  = c.toFixed(2);
+  document.getElementById('resFml').textContent = `√(${a}² + ${b}²)`;
+  document.getElementById('pA').textContent = a2;
+  document.getElementById('pB').textContent = b2;
+  document.getElementById('pC').textContent = Math.round(c*c);
+  document.getElementById('eqChk').textContent = `✓  ${a2} + ${b2} = ${a2+b2}`;
+
+  draw();
+}
+
+/* responsive: CSS scales the canvas visually, internal res stays 620×480 */
+function resize() {
+  const wrap  = cvs.parentElement;
+  const cssW  = wrap.clientWidth;
+  const cssH  = Math.round(cssW * CH / CW);
+  cvs.style.width  = cssW + 'px';
+  cvs.style.height = cssH + 'px';
+  draw();
+}
+
+window.addEventListener('resize', resize);
+window.addEventListener('load',   () => { resize(); update(); });
+resize(); update();
+</script>
+</body>
+</html>
